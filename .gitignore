@@ -1,0 +1,10 @@
+local.properties
+.gradle/
+.kotlin/
+.idea/
+build/
+*/build/
+spikes/*/local.properties
+spikes/*/.gradle/
+spikes/*/.kotlin/
+spikes/*/app/build/
