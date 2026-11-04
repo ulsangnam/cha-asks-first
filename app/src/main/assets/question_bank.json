@@ -1,0 +1,127 @@
+{
+  "topics": [
+    {
+      "id": "first-car",
+      "title": "처음 차 샀을 때",
+      "opening": "오늘은 처음 차 샀을 때 얘기 어때요?",
+      "questions": [
+        {
+          "id": "first-car-1",
+          "text": "첫 차는 어떤 차였어요?",
+          "depth": "light",
+          "followUps": [
+            {"keywords": ["중고", "물려", "아버지", "엄마", "부모"], "text": "그 차에 얽힌 사연이 있었나요?"}
+          ]
+        },
+        {
+          "id": "first-car-2",
+          "text": "첫 차로 처음 멀리 간 곳은 어디였어요?",
+          "depth": "light",
+          "followUps": [
+            {"keywords": ["바다", "강릉", "부산", "제주", "여행"], "text": "거기서 제일 기억나는 장면은요?"}
+          ]
+        },
+        {
+          "id": "first-car-3",
+          "text": "첫 차에서 제일 많이 들은 노래는요?",
+          "depth": "light"
+        },
+        {
+          "id": "first-car-4",
+          "text": "그 시절의 나에게 한마디 해준다면요?",
+          "depth": "deep"
+        },
+        {
+          "id": "first-car-5",
+          "text": "첫 차를 떠나보낼 때 기분은 어땠어요?",
+          "depth": "deep",
+          "followUps": [
+            {"keywords": ["아쉬", "슬펐", "울", "섭섭"], "text": "지금도 가끔 생각나요?"}
+          ]
+        }
+      ],
+      "closing": "오늘 이야기 한 줄로 정리하면요?"
+    },
+    {
+      "id": "lately",
+      "title": "요즘 나",
+      "opening": "오늘은 요즘 사는 얘기 좀 해볼까요?",
+      "questions": [
+        {
+          "id": "lately-1",
+          "text": "요즘 제일 많이 시간을 쓰는 일은 뭐예요?",
+          "depth": "light",
+          "followUps": [
+            {"keywords": ["회사", "일", "프로젝트", "야근"], "text": "그 일에서 제일 신경 쓰이는 부분은요?"}
+          ]
+        },
+        {
+          "id": "lately-2",
+          "text": "이번 주에 제일 좋았던 순간은 언제였어요?",
+          "depth": "light"
+        },
+        {
+          "id": "lately-3",
+          "text": "요즘 새로 시작한 게 있어요?",
+          "depth": "light",
+          "followUps": [
+            {"keywords": ["운동", "공부", "취미", "배우"], "text": "시작하게 된 계기가 있었어요?"}
+          ]
+        },
+        {
+          "id": "lately-4",
+          "text": "요즘 마음에 걸리는 고민이 있다면요?",
+          "depth": "deep"
+        },
+        {
+          "id": "lately-5",
+          "text": "1년 뒤 오늘은 어떤 모습이면 좋겠어요?",
+          "depth": "deep"
+        }
+      ],
+      "closing": "오늘 대화 한 줄로 남긴다면요?"
+    },
+    {
+      "id": "road-memory",
+      "title": "길 위의 기억",
+      "opening": "오늘은 길 위에서 생긴 기억들 얘기 해봐요.",
+      "questions": [
+        {
+          "id": "road-memory-1",
+          "text": "지금까지 가장 길게 운전한 건 어디까지였어요?",
+          "depth": "light",
+          "followUps": [
+            {"keywords": ["밤", "새벽", "혼자"], "text": "그때 어떤 생각을 하면서 달렸어요?"}
+          ]
+        },
+        {
+          "id": "road-memory-2",
+          "text": "다시 가보고 싶은 길이 있어요?",
+          "depth": "light"
+        },
+        {
+          "id": "road-memory-3",
+          "text": "휴게소에서 꼭 사 먹는 게 있어요?",
+          "depth": "light"
+        },
+        {
+          "id": "road-memory-4",
+          "text": "차 안에서 들었던 말 중에 오래 남은 말이 있어요?",
+          "depth": "deep",
+          "followUps": [
+            {"keywords": ["가족", "친구", "아이", "부모"], "text": "그 사람에게 지금 하고 싶은 말이 있다면요?"}
+          ]
+        },
+        {
+          "id": "road-memory-5",
+          "text": "운전하면서 혼자 결정한 중요한 일이 있었나요?",
+          "depth": "deep"
+        }
+      ],
+      "closing": "오늘 길 위의 기억, 한 줄로 남겨볼까요?"
+    }
+  ],
+  "dailyLog": {
+    "arrival": "도착했어요. 오늘 하루 한 줄로 남겨볼까요?"
+  }
+}
