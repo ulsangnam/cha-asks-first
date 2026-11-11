@@ -482,4 +482,4 @@ interface VoiceIO {
 - [ ] Step 5: `answer 그만` → STOP 후 저장 확인
 - [ ] Step 6: `route 회사 15` → `arrive` → 한 줄 일기 질문 → `answer` → 저장 확인
 - [ ] Step 7: `gear PARK` → 기록 목록에 세션 2개 확인
-- [ ] Step 8: 결과와 미확인 사항을 `CLAUDE.md` 실측 결과에 추가
+- [ ] Step 8: 결과와 미확인 사항을 README "현재 한계"에 반영

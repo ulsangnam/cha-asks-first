@@ -1,4 +1,7 @@
 local.properties
+# 내부 개발 지침과 기획 메모는 공개 저장소에 올리지 않는다.
+CLAUDE.md
+PLAN_BRIEF.md
 .gradle/
 .kotlin/
 .idea/

@@ -95,7 +95,5 @@ $R --es cmd gear --es gear PARK                        # 기록 화면
 
 ## 문서
 
-- [PLAN_BRIEF.md](PLAN_BRIEF.md): 실측 결과와 기획 결정 사항
-- [CLAUDE.md](CLAUDE.md): 개발 지침, SDK 실측 결과, 확인 필요 항목
 - [설계](docs/superpowers/specs/2026-11-03-cha-asks-first-app-design.md), [구현 계획](docs/superpowers/plans/2026-11-03-cha-asks-first-app.md)
 - `spikes/sdk-probe`: SDK 동작을 확인한 시험 앱

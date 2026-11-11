@@ -39,7 +39,7 @@ import ai.pleos.playground.tts.listener.EventListener as TtsEventListener
 import ai.pleos.playground.tts.listener.OnInitializeListener as TtsInitListener
 
 /**
- * CLAUDE.md 확인 항목을 실행하는 일회성 프로브.
+ * Pleos SDK 동작(차량 신호, 내비, TTS/STT, LLM)을 에뮬레이터에서 확인하는 일회성 프로브.
  * adb shell am start -n ai.hackerton.sdkprobe/.MainActivity --es t <perm|vehicle|navi|tts|stt|llm>
  * 결과는 logcat의 PROBE 태그로만 출력한다.
  */
