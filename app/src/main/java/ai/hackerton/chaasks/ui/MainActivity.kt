@@ -6,9 +6,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import ai.hackerton.chaasks.ui.theme.PleosTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -21,8 +20,8 @@ class MainActivity : ComponentActivity() {
         val app = application as ChaAsksApp
         app.orchestrator.start()
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                Surface(modifier = Modifier.fillMaxSize()) {
+            PleosTheme {
+                Surface(modifier = Modifier.fillMaxSize(), color = PleosTheme.colors.backgroundPrimary) {
                     val state by app.orchestrator.state.collectAsStateWithLifecycle()
                     val consented by app.consent.granted.collectAsStateWithLifecycle()
                     val parked = state.gear == Gear.PARK

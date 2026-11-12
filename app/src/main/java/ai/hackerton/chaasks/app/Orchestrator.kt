@@ -36,6 +36,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 
+enum class VoiceActivity { IDLE, SPEAKING, LISTENING }
+
 data class UiState(
     val gear: Gear = Gear.UNKNOWN,
     val load: Load = Load.NORMAL,
@@ -46,6 +48,11 @@ data class UiState(
     val remainMinutes: Int? = null,
     /** null이면 준비 중, true면 Pleos 음성 엔진, false면 화면 표시 모드. */
     val voiceEngineReady: Boolean? = null,
+    val voice: VoiceActivity = VoiceActivity.IDLE,
+    /** 현재 문장을 말하기 시작한 시각(epoch millis). 화면의 읽기 진행 표시에 쓴다. */
+    val speakingStartedAt: Long = 0L,
+    /** 운전자의 가장 최근 답. 진행자의 다음 말 위에 남겨 대화 흐름이 보이게 하고, 세션이 끝나면 비운다. */
+    val driverLine: String = "",
 )
 
 /**
@@ -155,14 +162,19 @@ class Orchestrator(
                 turns += TimedTurn(Turn(Speaker.HOST, utterance.text), now())
                 if (!utterance.expectsAnswer) break
                 val answer = listen()
-                if (answer.isNotBlank()) turns += TimedTurn(Turn(Speaker.DRIVER, answer), now())
+                if (answer.isNotBlank()) {
+                    turns += TimedTurn(Turn(Speaker.DRIVER, answer), now())
+                    _state.update { it.copy(driverLine = answer) }
+                }
                 utterance = nextUtterance(engine, answer)
             }
             repository.save(
                 SessionRecord(plan.mode, plan.topic?.id, startedAt, now(), destination, engine.summarize(), turns),
             )
         } finally {
-            _state.update { it.copy(mode = null, sessionActive = false, currentLine = "") }
+            _state.update {
+                it.copy(mode = null, sessionActive = false, currentLine = "", voice = VoiceActivity.IDLE, driverLine = "")
+            }
         }
     }
 
@@ -177,8 +189,16 @@ class Orchestrator(
         var failures = 0
         while (true) {
             load.first { it != Load.HIGH }
-            _state.update { it.copy(currentLine = text) }
-            when (voice.speak(text)) {
+            _state.update {
+                it.copy(
+                    currentLine = text,
+                    voice = VoiceActivity.SPEAKING,
+                    speakingStartedAt = now(),
+                )
+            }
+            val result = voice.speak(text)
+            _state.update { it.copy(voice = VoiceActivity.IDLE) }
+            when (result) {
                 SpeakResult.COMPLETED -> return true
                 SpeakResult.INTERRUPTED -> continue
                 SpeakResult.FAILED -> {
@@ -193,6 +213,7 @@ class Orchestrator(
     private suspend fun listen(): String {
         while (true) {
             load.first { it != Load.HIGH }
+            _state.update { it.copy(voice = VoiceActivity.LISTENING) }
             val heard = coroutineScope {
                 val fromVoice = async { voice.listen(LISTEN_TIMEOUT_MS) }
                 val fromScenario = async { injectedAnswers.first() }
@@ -201,6 +222,7 @@ class Orchestrator(
                     fromScenario.onAwait { it }
                 }.also { coroutineContext.cancelChildren() }
             }
+            _state.update { it.copy(voice = VoiceActivity.IDLE) }
             if (heard == null && load.value == Load.HIGH) continue
             return heard.orEmpty()
         }
