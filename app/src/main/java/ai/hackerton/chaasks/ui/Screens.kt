@@ -8,15 +8,25 @@ import ai.hackerton.chaasks.storage.SessionEntity
 import ai.hackerton.chaasks.ui.theme.PleosButton
 import ai.hackerton.chaasks.ui.theme.PleosTheme
 import ai.hackerton.chaasks.ui.theme.PleosType
+import ai.hackerton.chaasks.ui.effects.EffectMath
+import ai.hackerton.chaasks.ui.effects.StageColors
+import ai.hackerton.chaasks.ui.effects.VoiceBackdrop
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,12 +52,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -89,44 +102,95 @@ private fun ConsentItem(title: String, body: String) {
     }
 }
 
-/** 주행 중 화면. 터치 요소 없이 진행자가 지금 무엇을 하는지만 보여 준다. */
+/** 주행 중 화면. 터치 요소 없이 진행자가 지금 무엇을 하는지만 보여 준다. 분할 화면처럼 좁으면 세로로 쌓는다. */
 @Composable
 fun DrivingScreen(state: UiState) {
-    val c = PleosTheme.colors
     val paused = state.load == Load.HIGH
-    Page {
-        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            StatusRow(state)
-            // 운전자의 직전 답을 진행자의 다음 말 위에 두어 "내 답 → 진행자의 다음 질문" 순서로 읽히게 한다.
-            if (state.driverLine.isNotEmpty()) DriverBubble(state.driverLine)
-            Column(
-                modifier = Modifier.fillMaxWidth().weight(1f).clip(CardShape).background(c.surface).padding(48.dp),
-                verticalArrangement = Arrangement.spacedBy(40.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    HostOrb(activity = state.voice, paused = paused)
-                    Spacer(Modifier.width(24.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("진행자", style = PleosType.titleSmall, color = c.gleoSpeaker)
-                        Text(hostStateLabel(state, paused), style = PleosType.bodyMedium, color = c.textSecondary)
-                    }
-                }
-                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.CenterStart) {
-                    if (state.currentLine.isEmpty()) {
-                        Text("경로가 잡히면 먼저 말을 걸게요.", style = PleosType.titleLarge, color = c.textTertiary)
-                    } else {
-                        ReadingLine(
-                            text = state.currentLine,
-                            speaking = state.voice == VoiceActivity.SPEAKING && !paused,
-                            startedAt = state.speakingStartedAt,
-                            dimmed = paused,
-                        )
-                    }
-                }
-            }
-            Text(voiceLabel(state.voiceEngineReady), style = PleosType.labelSmall, color = c.textTertiary)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(StageColors.Top, StageColors.Bottom)))
+            .padding(PagePadding),
+    ) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            if (maxWidth >= WIDE_MIN_WIDTH) WideStage(state, paused) else NarrowStage(state, paused)
         }
     }
+}
+
+@Composable
+private fun WideStage(state: UiState, paused: Boolean) {
+    Box(Modifier.fillMaxSize()) {
+        VoiceBackdrop(state.voice, paused, Modifier.fillMaxWidth().height(360.dp).align(Alignment.Center))
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(32.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(32.dp)) {
+                    StatusRow(state)
+                    HostHeader(state, paused)
+                }
+                // 운전자의 직전 답을 진행자의 다음 말 위에 두어 "내 답 → 진행자의 다음 질문" 순서로 읽히게 한다.
+                if (state.driverLine.isNotEmpty()) DriverBubble(state.driverLine, Modifier.widthIn(max = 720.dp))
+            }
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.CenterStart) {
+                HostLine(state, paused)
+            }
+            EngineLabel(state)
+        }
+    }
+}
+
+@Composable
+private fun NarrowStage(state: UiState, paused: Boolean) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        StatusRow(state)
+        if (state.driverLine.isNotEmpty()) DriverBubble(state.driverLine, Modifier.fillMaxWidth())
+        HostHeader(state, paused)
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            VoiceBackdrop(state.voice, paused, Modifier.fillMaxWidth().height(240.dp))
+            HostLine(state, paused)
+        }
+        EngineLabel(state)
+    }
+}
+
+@Composable
+private fun HostHeader(state: UiState, paused: Boolean) {
+    val c = PleosTheme.colors
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        HostOrb(activity = state.voice, paused = paused)
+        Spacer(Modifier.width(24.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("진행자", style = PleosType.titleSmall, color = c.gleoSpeaker)
+            Text(hostStateLabel(state, paused), style = PleosType.bodyMedium, color = c.textSecondary)
+        }
+    }
+}
+
+/** 진행자의 현재 문장. 문장이 바뀌면 투명도만 바꿔 넘긴다. */
+@Composable
+private fun HostLine(state: UiState, paused: Boolean) {
+    val c = PleosTheme.colors
+    AnimatedContent(
+        targetState = state.currentLine,
+        transitionSpec = { fadeIn(tween(LINE_FADE_MS)) togetherWith fadeOut(tween(LINE_FADE_MS)) },
+        label = "hostLine",
+    ) { line ->
+        if (line.isEmpty()) {
+            Text("경로가 잡히면 먼저 말을 걸게요.", style = PleosType.titleLarge, color = c.textTertiary)
+        } else {
+            ReadingLine(
+                text = line,
+                speaking = state.voice == VoiceActivity.SPEAKING && !paused,
+                startedAt = state.speakingStartedAt,
+                dimmed = paused,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EngineLabel(state: UiState) {
+    Text(voiceLabel(state.voiceEngineReady), style = PleosType.labelSmall, color = PleosTheme.colors.textTertiary)
 }
 
 /**
@@ -188,18 +252,25 @@ private fun HostOrb(activity: VoiceActivity, paused: Boolean) {
     }
 }
 
+/** 운전자 답. 새 답이 오면 인식되는 것처럼 한 글자씩 나타난다. 같은 문장이면 다시 쓰지 않는다. */
 @Composable
-private fun DriverBubble(text: String) {
+private fun DriverBubble(text: String, modifier: Modifier = Modifier) {
     val c = PleosTheme.colors
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-        Column(
-            modifier = Modifier.widthIn(max = 900.dp).clip(CardShape).background(c.surface)
-                .padding(horizontal = 36.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text("나", style = PleosType.labelMedium, color = c.textTertiary)
-            Text(text, style = PleosType.bodyLarge, color = c.textPrimary, maxLines = 3, overflow = TextOverflow.Ellipsis)
+    var shown by remember(text) { mutableIntStateOf(0) }
+    LaunchedEffect(text) {
+        val start = System.currentTimeMillis()
+        while (shown < text.length) {
+            delay(TYPE_PER_CHAR_MS)
+            shown = EffectMath.revealCount(System.currentTimeMillis() - start, text.length, TYPE_PER_CHAR_MS)
         }
+    }
+    Column(
+        modifier = modifier.clip(CardShape).background(c.surface.copy(alpha = 0.72f))
+            .padding(horizontal = 36.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text("나", style = PleosType.labelMedium, color = c.textTertiary)
+        Text(text.take(shown), style = PleosType.bodyLarge, color = c.textPrimary, maxLines = 3, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -253,7 +324,7 @@ private fun SessionCard(session: SessionEntity) {
             Spacer(Modifier.width(16.dp))
             Text("${formatTime(session.startedAt)} · ${session.destinationLabel}", style = PleosType.labelMedium, color = c.textSecondary)
         }
-        Text(session.summary, style = PleosType.bodyMedium, color = c.textPrimary)
+        Text(SessionPreview.cardText(session.summary), style = PleosType.bodyMedium, color = c.textPrimary)
     }
 }
 
@@ -320,5 +391,9 @@ private fun formatTime(millis: Long): String = SimpleDateFormat("M월 d일 HH:mm
 private fun estimatedSpeechMillis(text: String): Long = 700L + text.length * 150L
 
 private const val READING_TICK_MS = 120L
+// 분할 화면 절반 창(약 840dp)은 이보다 좁다. 이 폭 미만이면 세로로 쌓는다.
+private val WIDE_MIN_WIDTH: Dp = 1000.dp
+private const val TYPE_PER_CHAR_MS = 45L
+private const val LINE_FADE_MS = 300
 private val SPEAKING_BARS = listOf(0.45f, 0.85f, 1f, 0.6f)
 private val IDLE_BARS = listOf(0.25f, 0.25f, 0.25f, 0.25f)

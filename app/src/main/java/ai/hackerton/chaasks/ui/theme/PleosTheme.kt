@@ -31,10 +31,10 @@ object PleosTheme {
         @Composable get() = LocalPleosColors.current
 }
 
-/** 시스템 라이트·다크 설정을 따라 Pleos 색상 토큰과 Asta Sans 글자 위계를 적용한다. */
+/** Pleos 색상 토큰과 Asta Sans 글자 위계를 적용한다. 기본은 시스템 라이트·다크 설정을 따른다. */
 @Composable
-fun PleosTheme(content: @Composable () -> Unit) {
-    val colors = if (isSystemInDarkTheme()) PleosDarkColors else PleosLightColors
+fun PleosTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    val colors = if (darkTheme) PleosDarkColors else PleosLightColors
     val materialColors = if (colors.isDark) {
         darkColorScheme(
             background = colors.backgroundPrimary,
