@@ -50,6 +50,7 @@ class PleosVehicleSource(context: Context) : DrivingSignalSource {
 
     private val gearListener = object : GearSelectionListener {
         override fun onSelected(value: VehicleGear?) {
+            Log.i(TAG, "gear=$value")
             value?.let { emit(DrivingEvent.GearChanged(it.toGear())) }
         }
 
@@ -81,6 +82,11 @@ class PleosVehicleSource(context: Context) : DrivingSignalSource {
     private fun registerListeners() {
         try {
             vehicle.getGear().registerGearSelection(gearListener)
+            // 리스너 첫 콜백이 오지 않은 사례가 있어 현재 기어도 한 번 직접 읽는다.
+            vehicle.getGear().getCurrentGearSelectionState(
+                { value: VehicleGear? -> value?.let { emit(DrivingEvent.GearChanged(it.toGear())) } },
+                { Log.w(TAG, "current gear read failed", it) },
+            )
             vehicle.getTurnSignal().checkTurnSignalStateCapabilities(
                 { vehicle.getTurnSignal().registerTurnSignalState(turnSignalListener) },
                 unsupported("TurnSignal"),
@@ -93,6 +99,7 @@ class PleosVehicleSource(context: Context) : DrivingSignalSource {
                 { vehicle.getBrake().registerBrakePedalStatus(brakeListener) },
                 unsupported("Brake"),
             )
+            Log.i(TAG, "vehicle listeners registered")
         } catch (e: Exception) {
             Log.w(TAG, "vehicle listener registration failed", e)
         }
