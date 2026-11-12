@@ -120,22 +120,17 @@ fun DrivingScreen(state: UiState) {
 
 @Composable
 private fun WideStage(state: UiState, paused: Boolean) {
-    Box(Modifier.fillMaxSize()) {
-        VoiceBackdrop(state.voice, paused, Modifier.fillMaxWidth().height(360.dp).align(Alignment.Center))
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(32.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(32.dp)) {
-                    StatusRow(state)
-                    HostHeader(state, paused)
-                }
-                // 운전자의 직전 답을 진행자의 다음 말 위에 두어 "내 답 → 진행자의 다음 질문" 순서로 읽히게 한다.
-                if (state.driverLine.isNotEmpty()) DriverBubble(state.driverLine, Modifier.widthIn(max = 720.dp))
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(32.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(32.dp)) {
+                StatusRow(state)
+                HostHeader(state, paused)
             }
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.CenterStart) {
-                HostLine(state, paused)
-            }
-            EngineLabel(state)
+            // 운전자의 직전 답을 진행자의 다음 말 위에 두어 "내 답 → 진행자의 다음 질문" 순서로 읽히게 한다.
+            if (state.driverLine.isNotEmpty()) DriverBubble(state.driverLine, Modifier.widthIn(max = 720.dp))
         }
+        LineOverWave(state, paused, waveHeight = 280.dp, modifier = Modifier.fillMaxWidth().weight(1f))
+        EngineLabel(state)
     }
 }
 
@@ -145,11 +140,17 @@ private fun NarrowStage(state: UiState, paused: Boolean) {
         StatusRow(state)
         if (state.driverLine.isNotEmpty()) DriverBubble(state.driverLine, Modifier.fillMaxWidth())
         HostHeader(state, paused)
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            VoiceBackdrop(state.voice, paused, Modifier.fillMaxWidth().height(240.dp))
-            HostLine(state, paused)
-        }
+        LineOverWave(state, paused, waveHeight = 200.dp, modifier = Modifier.fillMaxWidth().weight(1f))
         EngineLabel(state)
+    }
+}
+
+/** 질문 문장 바로 아래에 음성 효과 띠를 둔다. 선이 글자를 지나가지 않아 대비가 유지된다. */
+@Composable
+private fun LineOverWave(state: UiState, paused: Boolean, waveHeight: Dp, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically)) {
+        HostLine(state, paused)
+        VoiceBackdrop(state.voice, paused, Modifier.fillMaxWidth().height(waveHeight))
     }
 }
 
