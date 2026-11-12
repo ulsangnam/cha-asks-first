@@ -563,6 +563,138 @@ git commit -m "feat(ui): 어두운 무대 주행 화면, 좁은 창 배치, 답 
 
 ---
 
+### Task 5b: 기록 카드 Q/A 한 쌍, 화면 전환 페이드
+
+**Files:**
+- Create: `app/src/test/java/ai/hackerton/chaasks/ui/SessionPreviewTest.kt`
+- Create: `app/src/main/java/ai/hackerton/chaasks/ui/SessionPreview.kt`
+- Modify: `app/src/main/java/ai/hackerton/chaasks/ui/Screens.kt` (`SessionCard`, `HostLine`)
+- Modify: `app/src/main/java/ai/hackerton/chaasks/ui/MainActivity.kt`
+
+- [ ] **Step 1: 실패하는 테스트**
+
+```kotlin
+package ai.hackerton.chaasks.ui
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class SessionPreviewTest {
+    @Test fun talkShowKeepsTopicAndFirstPairOnly() {
+        val summary = "처음 차 샀을 때\nQ: 첫 차는 어떤 차였어요?\nA: 소나타였어요\nQ: 처음 멀리 간 곳은?\nA: 강릉"
+        assertEquals("처음 차 샀을 때\nQ: 첫 차는 어떤 차였어요?\nA: 소나타였어요", SessionPreview.cardText(summary))
+    }
+
+    @Test fun summaryWithoutAnswersIsUnchanged() {
+        assertEquals("한 줄 일기: 잘 끝났다", SessionPreview.cardText("한 줄 일기: 잘 끝났다"))
+        assertEquals("요즘 나", SessionPreview.cardText("요즘 나"))
+    }
+}
+```
+
+Run: `.\gradlew.bat :app:testDebugUnitTest --tests "ai.hackerton.chaasks.ui.SessionPreviewTest" --console=plain`
+Expected: 컴파일 실패 (`Unresolved reference: SessionPreview`)
+
+- [ ] **Step 2: 구현**
+
+```kotlin
+package ai.hackerton.chaasks.ui
+
+/** 기록 카드에 보여 줄 요약. 저장된 요약은 그대로 두고, 토크쇼는 주제와 첫 번째 Q/A 한 쌍만 보여 준다. */
+object SessionPreview {
+    fun cardText(summary: String): String {
+        val lines = summary.lines()
+        val firstAnswer = lines.indexOfFirst { it.startsWith("A: ") }
+        return if (firstAnswer < 0) summary else lines.take(firstAnswer + 1).joinToString("\n")
+    }
+}
+```
+
+`SessionCard`의 `Text(session.summary, ...)`를 `Text(SessionPreview.cardText(session.summary), ...)`로 바꾼다.
+
+Run: `.\gradlew.bat :app:testDebugUnitTest --console=plain` → `BUILD SUCCESSFUL`
+
+- [ ] **Step 3: 화면 전환 페이드 (`MainActivity`)**
+
+import 추가: `androidx.compose.animation.AnimatedContent`, `androidx.compose.animation.core.tween`, `androidx.compose.animation.fadeIn`, `androidx.compose.animation.fadeOut`, `androidx.compose.animation.togetherWith`
+
+`Surface { ... }` 안을 다음으로 교체:
+
+```kotlin
+                    val state by app.orchestrator.state.collectAsStateWithLifecycle()
+                    val consented by app.consent.granted.collectAsStateWithLifecycle()
+                    val parked = state.gear == Gear.PARK
+                    val screen = when {
+                        !consented -> Screen.CONSENT
+                        parked -> Screen.RECORDS
+                        else -> Screen.DRIVING
+                    }
+                    // 화면이 바뀔 때 투명도만 바꾼다. 이동·확대가 없어 시선을 끌지 않는다.
+                    AnimatedContent(
+                        targetState = screen,
+                        transitionSpec = { fadeIn(tween(FADE_MS)) togetherWith fadeOut(tween(FADE_MS)) },
+                        label = "screen",
+                    ) { target ->
+                        when (target) {
+                            Screen.CONSENT -> ConsentScreen(parked = parked, onAgree = app.consent::grant)
+                            Screen.RECORDS -> {
+                                val sessions by remember(consented) { app.repository.sessions() }
+                                    .collectAsStateWithLifecycle(initialValue = emptyList())
+                                RecordsScreen(state = state, sessions = sessions, onRevoke = app::revokeConsent)
+                            }
+                            Screen.DRIVING -> DrivingScreen(state = state)
+                        }
+                    }
+```
+
+파일 끝(클래스 밖)에:
+
+```kotlin
+private enum class Screen { CONSENT, RECORDS, DRIVING }
+
+private const val FADE_MS = 300
+```
+
+- [ ] **Step 4: 진행자 문장 교체 페이드 (`Screens.kt`의 `HostLine`)**
+
+import 추가: `androidx.compose.animation.AnimatedContent`, `androidx.compose.animation.core.tween`, `androidx.compose.animation.fadeIn`, `androidx.compose.animation.fadeOut`, `androidx.compose.animation.togetherWith`
+
+```kotlin
+@Composable
+private fun HostLine(state: UiState, paused: Boolean) {
+    val c = PleosTheme.colors
+    AnimatedContent(
+        targetState = state.currentLine,
+        transitionSpec = { fadeIn(tween(LINE_FADE_MS)) togetherWith fadeOut(tween(LINE_FADE_MS)) },
+        label = "hostLine",
+    ) { line ->
+        if (line.isEmpty()) {
+            Text("경로가 잡히면 먼저 말을 걸게요.", style = PleosType.titleLarge, color = c.textTertiary)
+        } else {
+            ReadingLine(
+                text = line,
+                speaking = state.voice == VoiceActivity.SPEAKING && !paused,
+                startedAt = state.speakingStartedAt,
+                dimmed = paused,
+            )
+        }
+    }
+}
+```
+
+상수: `private const val LINE_FADE_MS = 300`
+
+- [ ] **Step 5: 빌드·테스트·커밋**
+
+Run: `.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain` → `BUILD SUCCESSFUL`
+
+```powershell
+git add app/src/main/java/ai/hackerton/chaasks/ui/SessionPreview.kt app/src/test/java/ai/hackerton/chaasks/ui/SessionPreviewTest.kt app/src/main/java/ai/hackerton/chaasks/ui/Screens.kt app/src/main/java/ai/hackerton/chaasks/ui/MainActivity.kt
+git commit -m "feat(ui): 기록 카드는 Q/A 한 쌍만, 화면·문장 전환 페이드"
+```
+
+---
+
 ### Task 6: 에뮬레이터 확인
 
 **Files:** 없음 (확인만. 결과는 설계 문서 "확인" 절 아래에 적는다)
@@ -623,29 +755,40 @@ git commit -m "docs: 주행 화면 개편 에뮬레이터 확인 결과"
 **Files:**
 - Modify: `C:\Hackerton\submission\make_demo_video.py` (`record_talk_show` 앞에 분할 준비, 자막)
 
-- [ ] **Step 1: 분할 준비 함수 추가 (분할 성공 시에만)**
+스파이크 결과: 분할은 되고 내비 경로는 안 된다. 사용자 결정: 본 시연은 전체 화면, 마지막에 분할 장면을 붙인다.
 
-Task 1에서 성공한 명령을 그대로 옮긴다. 예: (a)가 성공했다면
+- [ ] **Step 1: 분할 장면 추가**
 
-```python
-def arrange_split() -> None:
-    """내비와 이 앱을 1:1 분할로 띄운다 (Task 1 스파이크에서 확인한 방법)."""
-    adb("shell", "input", "tap", "1097", "1370")  # 내비
-    time.sleep(3)
-    adb("shell", "am", "start", "--windowingMode", "6", "-n", f"{PKG}/.ui.MainActivity")
-    time.sleep(3)
-```
-
-`record_talk_show()`의 `with Scene(...)` 바로 앞에서 `arrange_split()`을 부른다. 내비 경로가 됐다면 같은 함수에서 Task 1 Step 3의 탭 순서를 이어서 실행한다. NaviHelper 수신까지 확인됐을 때만 `s.sub("[시연 주입] 기어 D, 부산까지 90분 경로")`를 `s.sub("내비 안내 시작 → NaviHelper가 경로·남은 시간을 받음")`으로 바꾸고 `scenario("route", ...)` 호출을 지운다.
-
-- [ ] **Step 2: 분할 실패 시 자막만 추가**
-
-`record_talk_show()`의 첫 `s.sub(...)` 다음에:
+`record_records()` 다음에:
 
 ```python
-        s.sub("실차에서는 내비 옆 분할 화면으로 함께 보입니다 (에뮬레이터는 단독 화면)")
+def record_split() -> Scene:
+    with Scene("s6_split") as s:
+        s.title("6. 내비 옆 분할 화면")
+        s.sub("[시연 주입] 기어 D, 강릉까지 60분 경로")
+        scenario("gear", gear="DRIVE")
+        adb("shell", "input", "tap", "1097", "1370")  # 하단 바 내비
         time.sleep(3)
+        adb("shell", "am", "start", "-n", f"{PKG}/.ui.MainActivity")
+        time.sleep(2)
+        # 창 바(앱 영역 오른쪽 끝 ⋮)를 왼쪽으로 끌면 내비와 이 앱이 1:1로 나뉜다 (스파이크에서 확인).
+        adb("shell", "input", "swipe", "2547", "718", "1700", "718", "800")
+        time.sleep(2)
+        scenario("route", dest="강릉", min=60)
+        opening = wait_host("OPENING")
+        s.sub("실차에서는 내비 옆 절반 창에서도 같은 대화 (에뮬레이터 내비는 지도를 표시하지 않음)")
+        time.sleep(speak_seconds(opening))
+        s.answer("그만")
+        stop = wait_host("STOP")
+        time.sleep(speak_seconds(stop))
+    return s
 ```
+
+`main()`의 `recorders` 목록 끝에 `record_split`을, `--render-only`의 이름 목록 끝에 `"s6_split"`을 추가한다.
+
+- [ ] **Step 2: 분할 상태 정리 확인**
+
+녹화가 끝나면 에뮬레이터가 분할 상태로 남는다. 다시 녹화하기 전에 `adb shell input swipe 1706 718 2540 718 800`(가운데 창 바를 오른쪽 끝으로)로 풀리는지 확인하고, 안 풀리면 에뮬레이터를 재부팅(`adb reboot`, cold boot 설정)한다.
 
 - [ ] **Step 3: release 빌드로 재녹화**
 
