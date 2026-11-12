@@ -1,4 +1,4 @@
-package ai.hackerton.chaasks.debug
+package ai.hackerton.chaasks.demo
 
 import ai.hackerton.chaasks.core.DrivingEvent
 import ai.hackerton.chaasks.core.Gear
@@ -9,8 +9,9 @@ import android.content.Intent
 import android.util.Log
 
 /**
- * 시연용 신호·답변 주입. 예:
- * adb shell am broadcast -n ai.hackerton.chaasks/.debug.ScenarioReceiver --es cmd route --es dest 부산 --ei min 90
+ * 시연용 신호·답변 주입. 에뮬레이터에 내비 경로 제어가 없어 release에도 넣되,
+ * 매니페스트에서 DUMP 권한을 요구해 adb 셸과 시스템만 보낼 수 있다. 예:
+ * adb shell am broadcast -n ai.hackerton.chaasks/.demo.ScenarioReceiver --es cmd route --es dest 부산 --ei min 90
  * cmd: route(dest, min) remain(min) arrive cancel gear(gear) signal(on) brake(on) steer(deg) answer(text)
  */
 class ScenarioReceiver : BroadcastReceiver() {

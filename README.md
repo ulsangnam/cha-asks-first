@@ -54,20 +54,48 @@ NaviHelper ──┼─> DrivingEvent ─> Orchestrator ─┬─> PacingStateMa
 
 ## 실행
 
-필요한 것: Android Studio, JDK 17, Pleos Connect Emulator v2.1.0 (API 34) AVD. 에뮬레이터 설치는 [공식 가이드](https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator)를 따른다. AVD는 cold boot로 설정해야 차량 신호(VHAL)가 동작한다.
+### APK
+
+release APK: [`apk/TeamCAF_cha-asks-first_release.apk`](apk/TeamCAF_cha-asks-first_release.apk)
+
+```bash
+adb install -r apk/TeamCAF_cha-asks-first_release.apk
+adb shell am start -n ai.hackerton.chaasks/.ui.MainActivity
+```
+
+첫 화면은 개인정보 동의다. 기어가 P일 때만 "동의합니다" 버튼이 열린다(에뮬레이터 기본값이 P). 동의하면 기록 화면이 나오고, 경로가 시작되면 진행자가 먼저 말을 건다. 경로는 아래 "시연 시나리오"처럼 주입한다.
+
+### 테스트 환경
+
+| 항목 | 값 |
+|---|---|
+| 에뮬레이터 | Pleos Connect Emulator v2.1.0 (`RELEASE.release_connect_v2.1.0`), Android 14 (API 34) |
+| 화면 규격 | 2560 × 1440, 밀도 160 (mdpi) |
+| AVD | RAM 4GB, cold boot |
+| 개발 도구 | Android Studio, JDK 17, Gradle 8.11.1, Android Gradle Plugin 8.9.1 |
+
+### 필요한 설정
+
+- 에뮬레이터 설치는 [공식 가이드](https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator)를 따른다. AVD는 cold boot로 설정해야 차량 신호(VHAL)가 동작한다.
+- 별도 계정이나 API 키는 필요 없다. Gleo TTS/STT를 온디바이스 모드로 써서 앱 등록 없이 동작한다.
+- 에뮬레이터의 운전자 계정은 사용자 10이다. 앱 데이터를 지우려면 `adb shell pm clear --user current ai.hackerton.chaasks`를 쓴다.
+
+### 소스에서 빌드
 
 ```bash
 ./gradlew :app:testDebugUnitTest   # 단위 테스트 27개
-./gradlew :app:assembleDebug
+./gradlew :app:assembleDebug       # 서명 키 없이 바로 설치할 수 있는 빌드
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+`./gradlew :app:assembleRelease`는 저장소에 없는 `keystore.properties`(storeFile, storePassword, keyAlias, keyPassword)로 서명한다. 이 파일이 없으면 서명되지 않은 release APK가 나온다.
+
 ### 시연 시나리오
 
-에뮬레이터 콘솔에 내비 경로 제어가 없어, 디버그 빌드에만 있는 수신자로 경로·도착·답변을 주입한다. 시연 영상에서도 주입 사실을 밝힌다.
+에뮬레이터 콘솔에 내비 경로 제어가 없어, 시연용 수신기로 경로·도착·답변을 주입한다. 수신기는 `android.permission.DUMP`를 요구하므로 adb 셸에서만 보낼 수 있고 다른 앱은 보낼 수 없다. 시연 영상에서도 주입 사실을 밝힌다.
 
 ```bash
-R="adb shell am broadcast -n ai.hackerton.chaasks/.debug.ScenarioReceiver"
+R="adb shell am broadcast -n ai.hackerton.chaasks/.demo.ScenarioReceiver"
 $R --es cmd gear --es gear DRIVE
 $R --es cmd route --es dest 부산 --ei min 90          # 토크쇼 시작
 $R --es cmd answer --es text "'아버지가 타던 중고차였어요'"   # 운전자 답 (꼬리 질문 유도)

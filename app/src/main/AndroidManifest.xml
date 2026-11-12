@@ -23,6 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- 시연용 주입. DUMP 권한을 요구해 adb 셸과 시스템만 보낼 수 있고 다른 앱은 보낼 수 없다. -->
+        <receiver
+            android:name=".demo.ScenarioReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 
 </manifest>
