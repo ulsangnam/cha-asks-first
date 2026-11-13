@@ -9,7 +9,9 @@
 
     <application
         android:name=".app.ChaAsksApp"
+        android:icon="@mipmap/ic_launcher"
         android:label="차가 먼저 묻는다"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
         <activity
