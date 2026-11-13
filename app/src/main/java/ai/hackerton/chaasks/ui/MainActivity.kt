@@ -25,8 +25,8 @@ class MainActivity : ComponentActivity() {
         val app = application as ChaAsksApp
         app.orchestrator.start()
         setContent {
-            // 음성 효과가 빛나 보이도록 어두운 무대로 고정한다.
-            PleosTheme(darkTheme = true) {
+            // Pleos 시스템 화면과 맞도록 시스템 라이트·다크 설정을 따른다.
+            PleosTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = PleosTheme.colors.backgroundPrimary) {
                     val state by app.orchestrator.state.collectAsStateWithLifecycle()
                     val consented by app.consent.granted.collectAsStateWithLifecycle()

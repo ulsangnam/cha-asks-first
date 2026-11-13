@@ -30,9 +30,15 @@ class PleosNaviSource(context: Context) : DrivingSignalSource {
             if (info.remainTime > 0) emit(DrivingEvent.RemainTime(secondsToMinutes(info.remainTime)))
         }
 
-        override fun onDestinationArrived(info: DestinationArrivedInfo) = emit(DrivingEvent.Arrived)
+        override fun onDestinationArrived(info: DestinationArrivedInfo) {
+            Log.i(TAG, "destination arrived")
+            emit(DrivingEvent.Arrived)
+        }
 
-        override fun onRouteCancelled() = emit(DrivingEvent.RouteCancelled)
+        override fun onRouteCancelled() {
+            Log.i(TAG, "route cancelled")
+            emit(DrivingEvent.RouteCancelled)
+        }
 
         override fun onError(code: NaviErrorCode) {
             Log.w(TAG, "navi error=$code")
@@ -64,7 +70,7 @@ class PleosNaviSource(context: Context) : DrivingSignalSource {
         _events.tryEmit(event)
     }
 
-    // 시간 단위가 문서에 없어 초로 가정한다. 원값을 로그로 남겨 실제 경로 주행에서 확인한다.
+    // 시간 단위는 문서에 없다. 에뮬레이터 실제 경로에서 원값 1920이 내비 표시 32분과 맞아 초로 확인했다.
     private fun secondsToMinutes(seconds: Int): Int = (seconds + 59) / 60
 
     private companion object {

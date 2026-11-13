@@ -106,10 +106,11 @@ private fun ConsentItem(title: String, body: String) {
 @Composable
 fun DrivingScreen(state: UiState) {
     val paused = state.load == Load.HIGH
+    val stage = StageColors.current
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(StageColors.Top, StageColors.Bottom)))
+            .background(Brush.verticalGradient(listOf(stage.top, stage.bottom)))
             .padding(PagePadding),
     ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {

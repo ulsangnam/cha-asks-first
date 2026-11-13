@@ -92,7 +92,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ### 시연 시나리오
 
-에뮬레이터 콘솔에 내비 경로 제어가 없어, 시연용 수신기로 경로·도착·답변을 주입한다. 수신기는 `android.permission.DUMP`를 요구하므로 adb 셸에서만 보낼 수 있고 다른 앱은 보낼 수 없다. 시연 영상에서도 주입 사실을 밝힌다.
+실제 내비 경로로도 시작할 수 있다. 앱을 띄운 뒤 에뮬레이터 내비 검색창에서 "현대자동차"를 검색해 "목적지로"를 누르면, NaviHelper가 경로 시작과 남은 시간을 보내고 30분 이상이면 토크쇼가 열린다. 지도 타일은 에뮬레이터에서 비어 보인다.
+
+에뮬레이터 내비는 도착·남은 시간을 원하는 값으로 바꿀 수 없어, 시연용 수신기로 경로·도착·답변을 주입한다. 수신기는 `android.permission.DUMP`를 요구하므로 adb 셸에서만 보낼 수 있고 다른 앱은 보낼 수 없다. 시연 영상에서도 주입 사실을 밝힌다.
 
 ```bash
 R="adb shell am broadcast -n ai.hackerton.chaasks/.demo.ScenarioReceiver"

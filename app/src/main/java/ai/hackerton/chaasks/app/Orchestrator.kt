@@ -106,8 +106,14 @@ class Orchestrator(
                 _state.update { it.copy(remainMinutes = event.minutes) }
                 if (SessionPlanner.shouldClose(event.minutes)) closeRequested = true
             }
-            DrivingEvent.Arrived -> onArrived()
-            DrivingEvent.RouteCancelled -> pendingDailyLogDestination = null
+            DrivingEvent.Arrived -> {
+                _state.update { it.copy(remainMinutes = null) }
+                onArrived()
+            }
+            DrivingEvent.RouteCancelled -> {
+                _state.update { it.copy(remainMinutes = null) }
+                pendingDailyLogDestination = null
+            }
             else -> Unit
         }
     }
